@@ -17,10 +17,20 @@ describe('requireAuth middleware', () => {
   });
 
   describe('GET /me — invalid token', () => {
-    it('returns 401 invalid_token', async () => {
+    it('returns 401 invalid_token for a malformed JWT', async () => {
       const res = await request(app)
         .get('/me')
         .set('Authorization', 'Bearer not.a.valid.jwt');
+      expect(res.status).toBe(401);
+      expect(res.body.error).toBe('invalid_token');
+    });
+
+    it('returns 401 invalid_token for a tampered JWT', async () => {
+      const token = signToken({ sub: 1, email: 'x@y.com', role: 'member' });
+      const tampered = token.slice(0, -5) + 'XXXXX';
+      const res = await request(app)
+        .get('/me')
+        .set('Authorization', `Bearer ${tampered}`);
       expect(res.status).toBe(401);
       expect(res.body.error).toBe('invalid_token');
     });

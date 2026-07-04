@@ -10,7 +10,9 @@ jest.mock('../src/db', () => ({
 }));
 
 const app = require('../src/app');
-const { verifyToken } = require('../src/jwt');
+const { signToken, verifyToken } = require('../src/jwt');
+
+// ── OAuth redirect ────────────────────────────────────────────────────────────
 
 describe('GET /auth/google', () => {
   it('redirects to Google OAuth consent screen', async () => {
@@ -18,15 +20,25 @@ describe('GET /auth/google', () => {
     expect(res.status).toBe(302);
     expect(res.headers.location).toMatch(/accounts\.google\.com/);
   });
+
+  it('includes profile and email scopes in redirect URL', async () => {
+    const res = await request(app).get('/auth/google');
+    expect(res.headers.location).toMatch(/scope=.*email/);
+    expect(res.headers.location).toMatch(/scope=.*profile/);
+  });
 });
 
-describe('GET /auth/google/callback', () => {
-  it('redirects when no code is provided', async () => {
+// ── Callback — no code ────────────────────────────────────────────────────────
+
+describe('GET /auth/google/callback — no code', () => {
+  it('redirects (302) when no authorization code is provided', async () => {
     const res = await request(app).get('/auth/google/callback');
     expect(res.status).toBe(302);
     expect(res.headers.location).toBeTruthy();
   });
 });
+
+// ── Failure route ─────────────────────────────────────────────────────────────
 
 describe('GET /auth/failure', () => {
   it('returns 401 authentication_failed', async () => {
@@ -36,9 +48,10 @@ describe('GET /auth/failure', () => {
   });
 });
 
+// ── JWT helpers ───────────────────────────────────────────────────────────────
+
 describe('jwt helpers', () => {
   it('signToken produces a token verifiable by verifyToken', () => {
-    const { signToken } = require('../src/jwt');
     const token = signToken({ sub: 42, email: 'a@b.com', role: 'member' });
     const payload = verifyToken(token);
     expect(payload.sub).toBe(42);
