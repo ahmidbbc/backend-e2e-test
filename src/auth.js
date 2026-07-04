@@ -1,8 +1,11 @@
 const { Router } = require('express');
 const { OAuth2Client } = require('google-auth-library');
+const { signToken, verifyToken, requireAuth } = require('./session');
 
-function buildAuthRouter({ db, oauthClient, redirectUri }) {
+function buildAuthRouter({ db, oauthClient, redirectUri, secret, signFn, requireAuthFn }) {
   const router = Router();
+  const sign = signFn || ((payload) => signToken(payload, secret));
+  const authMiddleware = requireAuthFn || requireAuth((token) => verifyToken(token, secret));
 
   router.get('/auth/google', (_req, res) => {
     const url = oauthClient.generateAuthUrl({
@@ -53,7 +56,26 @@ function buildAuthRouter({ db, oauthClient, redirectUri }) {
       [email, googleId]
     );
 
-    return res.json({ user: result.rows[0] });
+    const user = result.rows[0];
+    const sessionToken = sign({ sub: user.id, email: user.email, role: user.role });
+
+    res.cookie('token', sessionToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 24 * 60 * 60 * 1000,
+    });
+
+    return res.json({ user, token: sessionToken });
+  });
+
+  router.post('/auth/logout', (_req, res) => {
+    res.clearCookie('token');
+    return res.json({ ok: true });
+  });
+
+  router.get('/auth/me', authMiddleware, (req, res) => {
+    return res.json({ user: req.user });
   });
 
   return router;
@@ -67,7 +89,8 @@ function createDefaultAuthRouter() {
     process.env.GOOGLE_CLIENT_SECRET
   );
   const redirectUri = process.env.GOOGLE_REDIRECT_URI || 'http://localhost:3000/auth/google/callback';
-  return buildAuthRouter({ db, oauthClient, redirectUri });
+  const secret = process.env.JWT_SECRET || 'dev-secret-change-me';
+  return buildAuthRouter({ db, oauthClient, redirectUri, secret });
 }
 
 module.exports = { buildAuthRouter, createDefaultAuthRouter };

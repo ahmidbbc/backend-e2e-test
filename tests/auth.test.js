@@ -2,6 +2,8 @@ const request = require('supertest');
 const express = require('express');
 const { buildAuthRouter } = require('../src/auth');
 
+const TEST_SECRET = 'test-secret';
+
 function makeApp(overrides = {}) {
   const app = express();
   app.use(express.json());
@@ -21,7 +23,8 @@ function makeApp(overrides = {}) {
   };
 
   const redirectUri = 'http://localhost:3000/auth/google/callback';
-  app.use(buildAuthRouter({ db, oauthClient, redirectUri }));
+  const signFn = (payload) => require('../src/session').signToken(payload, TEST_SECRET);
+  app.use(buildAuthRouter({ db, oauthClient, redirectUri, signFn }));
   return { app, db, oauthClient };
 }
 
