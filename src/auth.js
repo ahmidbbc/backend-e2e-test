@@ -2,7 +2,7 @@ const { Router } = require('express');
 const { OAuth2Client } = require('google-auth-library');
 const { signToken, verifyToken, requireAuth } = require('./session');
 
-function buildAuthRouter({ db, oauthClient, redirectUri, secret, signFn, requireAuthFn }) {
+function buildAuthRouter({ db, oauthClient, redirectUri, secret, signFn, requireAuthFn, postLoginRedirect, errorRedirect }) {
   const router = Router();
   const sign = signFn || ((payload) => signToken(payload, secret));
   const authMiddleware = requireAuthFn || requireAuth((token) => verifyToken(token, secret));
@@ -20,9 +20,11 @@ function buildAuthRouter({ db, oauthClient, redirectUri, secret, signFn, require
     const { code, error } = req.query;
 
     if (error) {
+      if (errorRedirect) return res.redirect(errorRedirect + '?error=' + encodeURIComponent(error));
       return res.status(400).json({ error });
     }
     if (!code) {
+      if (errorRedirect) return res.redirect(errorRedirect + '?error=missing_code');
       return res.status(400).json({ error: 'missing_code' });
     }
 
@@ -30,6 +32,7 @@ function buildAuthRouter({ db, oauthClient, redirectUri, secret, signFn, require
     try {
       ({ tokens } = await oauthClient.getToken({ code, redirect_uri: redirectUri }));
     } catch (err) {
+      if (errorRedirect) return res.redirect(errorRedirect + '?error=token_exchange_failed');
       return res.status(400).json({ error: 'token_exchange_failed', detail: err.message });
     }
 
@@ -43,6 +46,7 @@ function buildAuthRouter({ db, oauthClient, redirectUri, secret, signFn, require
       });
       payload = ticket.getPayload();
     } catch (err) {
+      if (errorRedirect) return res.redirect(errorRedirect + '?error=id_token_invalid');
       return res.status(400).json({ error: 'id_token_invalid', detail: err.message });
     }
 
@@ -66,6 +70,7 @@ function buildAuthRouter({ db, oauthClient, redirectUri, secret, signFn, require
       maxAge: 24 * 60 * 60 * 1000,
     });
 
+    if (postLoginRedirect) return res.redirect(postLoginRedirect);
     return res.json({ user, token: sessionToken });
   });
 
@@ -90,7 +95,9 @@ function createDefaultAuthRouter() {
   );
   const redirectUri = process.env.GOOGLE_REDIRECT_URI || 'http://localhost:3000/auth/google/callback';
   const secret = process.env.JWT_SECRET || 'dev-secret-change-me';
-  return buildAuthRouter({ db, oauthClient, redirectUri, secret });
+  const postLoginRedirect = process.env.POST_LOGIN_REDIRECT || '/dashboard.html';
+  const errorRedirect = process.env.ERROR_REDIRECT || '/login.html';
+  return buildAuthRouter({ db, oauthClient, redirectUri, secret, postLoginRedirect, errorRedirect });
 }
 
 module.exports = { buildAuthRouter, createDefaultAuthRouter };

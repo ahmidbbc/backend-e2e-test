@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard</title>
+  <style>
+    body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; background: #f5f5f5; }
+    .card { background: #fff; padding: 2.5rem; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,.12); min-width: 320px; }
+    h1 { margin: 0 0 1rem; font-size: 1.4rem; color: #222; }
+    p { color: #444; margin: .4rem 0; }
+    .logout-btn { margin-top: 1.5rem; padding: .6rem 1.2rem; border: none; border-radius: 4px; background: #e53935; color: #fff; font-size: .95rem; cursor: pointer; }
+    .logout-btn:hover { background: #c62828; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Dashboard</h1>
+    <p id="greeting">Loading…</p>
+    <p id="role"></p>
+    <button class="logout-btn" id="logout-btn">Sign out</button>
+  </div>
+  <script>
+    (async () => {
+      try {
+        const res = await fetch('/auth/me', { credentials: 'include' });
+        if (res.status === 401) {
+          window.location.replace('/login.html');
+          return;
+        }
+        const { user } = await res.json();
+        document.getElementById('greeting').textContent = 'Welcome, ' + user.email;
+        document.getElementById('role').textContent = 'Role: ' + user.role;
+      } catch {
+        window.location.replace('/login.html');
+      }
+    })();
+
+    document.getElementById('logout-btn').addEventListener('click', async () => {
+      await fetch('/auth/logout', { method: 'POST', credentials: 'include' });
+      window.location.replace('/login.html');
+    });
+  </script>
+</body>
+</html>
