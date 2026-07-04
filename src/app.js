@@ -11,10 +11,13 @@ if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET || !GOOGLE_REDIRECT_URI) {
   throw new Error('Missing required OAuth2 env vars: GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REDIRECT_URI');
 }
 
+const authRouter = require('./auth');
+
 const app = express();
 app.use(express.json());
 
 app.get('/health', (_req, res) => res.json({ status: 'ok' }));
+app.use(authRouter);
 
 const PORT = process.env.PORT || 3000;
 if (require.main === module) {
