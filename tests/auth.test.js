@@ -1,8 +1,13 @@
 const request = require('supertest');
+const jwt = require('jsonwebtoken');
 
 const FAKE_STATE = 'aabbccdd11223344aabbccdd11223344';
 const FAKE_SUB = '123456789';
 const FAKE_EMAIL = 'user@example.com';
+const TEST_SECRET = 'test_jwt_secret';
+
+beforeAll(() => { process.env.JWT_SECRET = TEST_SECRET; });
+afterAll(() => { delete process.env.JWT_SECRET; });
 
 jest.mock('../src/config/oauth', () => ({
   createOAuthClient: () => ({
@@ -80,13 +85,17 @@ describe('GET /google/callback', () => {
     expect(res.body.error).toBe('token_exchange_failed');
   });
 
-  it('returns sub and email on success', async () => {
+  it('returns a signed JWT with sub and email on success', async () => {
     const res = await request(app)
       .get('/google/callback')
       .set('Cookie', `oauth_state=${FAKE_STATE}`)
       .query({ code: 'valid_code', state: FAKE_STATE });
     expect(res.status).toBe(200);
-    expect(res.body.sub).toBe(FAKE_SUB);
-    expect(res.body.email).toBe(FAKE_EMAIL);
+    expect(typeof res.body.token).toBe('string');
+
+    const decoded = jwt.verify(res.body.token, TEST_SECRET);
+    expect(decoded.sub).toBe(FAKE_SUB);
+    expect(decoded.email).toBe(FAKE_EMAIL);
+    expect(decoded.exp - decoded.iat).toBe(24 * 60 * 60);
   });
 });
