@@ -7,6 +7,18 @@ describe('GET /auth/google', () => {
     expect(res.status).toBe(302);
     expect(res.headers.location).toMatch(/accounts\.google\.com/);
   });
+
+  it('includes a state param in the redirect URL', async () => {
+    const res = await request(app).get('/auth/google');
+    const location = new URL(res.headers.location);
+    expect(location.searchParams.get('state')).toMatch(/^[0-9a-f]{32}$/);
+  });
+
+  it('sets an oauth_state cookie', async () => {
+    const res = await request(app).get('/auth/google');
+    const setCookie = res.headers['set-cookie'] || [];
+    expect(setCookie.some(c => c.startsWith('oauth_state='))).toBe(true);
+  });
 });
 
 describe('GET /auth/google/callback', () => {

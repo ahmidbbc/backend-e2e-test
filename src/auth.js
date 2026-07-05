@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const { Router } = require('express');
 const { OAuth2Client } = require('google-auth-library');
 
@@ -9,12 +10,23 @@ const {
 
 const client = new OAuth2Client(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REDIRECT_URI);
 
+const COOKIE_NAME = 'oauth_state';
+const COOKIE_TTL_MS = 5 * 60 * 1000;
+
 const router = Router();
 
 router.get('/auth/google', (_req, res) => {
+  const state = crypto.randomBytes(16).toString('hex');
+  res.cookie(COOKIE_NAME, state, {
+    httpOnly: true,
+    sameSite: 'lax',
+    maxAge: COOKIE_TTL_MS,
+  });
   const url = client.generateAuthUrl({
     access_type: 'offline',
     scope: ['openid', 'email', 'profile'],
+    response_type: 'code',
+    state,
   });
   res.redirect(url);
 });
