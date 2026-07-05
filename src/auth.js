@@ -1,6 +1,7 @@
 const crypto = require('crypto');
 const { Router } = require('express');
 const { OAuth2Client } = require('google-auth-library');
+const { verifyIdToken } = require('./verifyIdToken');
 
 const {
   GOOGLE_CLIENT_ID,
@@ -66,18 +67,14 @@ router.get('/auth/google/callback', async (req, res) => {
     return res.status(502).json({ error: 'No id_token returned by Google' });
   }
 
-  let payload;
+  let profile;
   try {
-    const ticket = await client.verifyIdToken({
-      idToken: tokens.id_token,
-      audience: GOOGLE_CLIENT_ID,
-    });
-    payload = ticket.getPayload();
+    profile = await verifyIdToken(tokens.id_token, GOOGLE_CLIENT_ID);
   } catch (err) {
     return res.status(401).json({ error: 'Invalid id_token' });
   }
 
-  res.json({ email: payload.email, google_id: payload.sub, name: payload.name });
+  res.json({ email: profile.email, google_id: profile.sub, name: profile.name, picture: profile.picture });
 });
 
 module.exports = router;
