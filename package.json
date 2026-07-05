@@ -9,7 +9,8 @@
     "lint": "eslint src/ tests/"
   },
   "dependencies": {
-    "express": "^4.18.2"
+    "express": "^4.18.2",
+    "google-auth-library": "^10.9.0"
   },
   "devDependencies": {
     "eslint": "^8.57.0",
