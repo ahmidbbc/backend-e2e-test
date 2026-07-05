@@ -2,10 +2,24 @@
 
 Test repo for S1 E2E validation and agent demo.
 
+## Google Cloud Console setup (required before first run)
+
+1. Go to [console.cloud.google.com](https://console.cloud.google.com) and create a new project (or select an existing one).
+2. Navigate to **APIs & Services → Library** and enable the **Google Identity (OAuth 2.0)** API.
+3. Go to **APIs & Services → Credentials → Create Credentials → OAuth client ID**.
+   - Application type: **Web application**
+   - Authorized redirect URIs: `http://localhost:3000/auth/google/callback`
+4. Copy the generated **Client ID** and **Client Secret** into `.env`:
+   ```
+   GOOGLE_CLIENT_ID=<your-client-id>
+   GOOGLE_CLIENT_SECRET=<your-client-secret>
+   ```
+
 ## Setup
 
 ```bash
 cp .env.example .env
+# Fill in GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET (see above)
 npm install
 npm test
 ```
