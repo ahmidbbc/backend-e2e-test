@@ -2,6 +2,8 @@ const crypto = require('crypto');
 const { Router } = require('express');
 const { OAuth2Client } = require('google-auth-library');
 const { verifyIdToken } = require('./verifyIdToken');
+const db = require('./db');
+const { signSession } = require('./session');
 
 const {
   GOOGLE_CLIENT_ID,
@@ -74,7 +76,21 @@ router.get('/auth/google/callback', async (req, res) => {
     return res.status(401).json({ error: 'Invalid id_token' });
   }
 
-  res.json({ email: profile.email, google_id: profile.sub, name: profile.name, picture: profile.picture });
+  let user;
+  try {
+    user = await db.upsertUser({ google_id: profile.sub, email: profile.email });
+  } catch (err) {
+    return res.status(500).json({ error: 'Database error' });
+  }
+
+  let token;
+  try {
+    token = signSession({ id: user.id, email: user.email, role: user.role });
+  } catch (err) {
+    return res.status(500).json({ error: 'Failed to sign session token' });
+  }
+
+  res.json({ token });
 });
 
 module.exports = router;
