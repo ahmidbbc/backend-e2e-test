@@ -14,11 +14,15 @@ Test repo for S1 E2E validation and agent demo.
    - Save and continue through the remaining steps.
 4. Go to **APIs & Services → Credentials → Create Credentials → OAuth client ID**.
    - Application type: **Web application**
-   - Authorized redirect URIs: `http://localhost:3000/auth/google/callback`
-4. Copy the generated **Client ID** and **Client Secret** into `.env`:
+   - Authorized redirect URIs (add both for local dev):
+     - `http://localhost:3000/auth/google/callback`
+     - `http://localhost:8100/auth/google/callback`
+   - Click **Create** — Google displays the Client ID and Client Secret once.
+5. Copy the generated values into `.env`:
    ```
    GOOGLE_CLIENT_ID=<your-client-id>
    GOOGLE_CLIENT_SECRET=<your-client-secret>
+   GOOGLE_REDIRECT_URI=http://localhost:3000/auth/google/callback
    ```
 
 ## Setup
