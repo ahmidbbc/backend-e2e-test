@@ -6,7 +6,13 @@ Test repo for S1 E2E validation and agent demo.
 
 1. Go to [console.cloud.google.com](https://console.cloud.google.com) and create a new project (or select an existing one).
 2. Navigate to **APIs & Services → Library** and enable the **Google Identity (OAuth 2.0)** API.
-3. Go to **APIs & Services → Credentials → Create Credentials → OAuth client ID**.
+3. Go to **APIs & Services → OAuth consent screen** and configure:
+   - User type: **External** (or Internal if using a Google Workspace org)
+   - App name: e.g. `backend-e2e-test`
+   - Authorized domain: `localhost` (for local dev)
+   - Scopes: add `openid`, `email`, `profile`
+   - Save and continue through the remaining steps.
+4. Go to **APIs & Services → Credentials → Create Credentials → OAuth client ID**.
    - Application type: **Web application**
    - Authorized redirect URIs: `http://localhost:3000/auth/google/callback`
 4. Copy the generated **Client ID** and **Client Secret** into `.env`:
