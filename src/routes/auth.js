@@ -1,6 +1,7 @@
 const { Router } = require('express');
 const crypto = require('crypto');
 const { createOAuthClient, getAuthUrl } = require('../config/oauth');
+const { signToken } = require('../services/jwt');
 
 const router = Router();
 
@@ -50,10 +51,8 @@ router.get('/google/callback', async (req, res) => {
     return res.status(401).json({ error: 'id_token_invalid' });
   }
 
-  return res.json({
-    sub: payload.sub,
-    email: payload.email,
-  });
+  const token = signToken({ sub: payload.sub, email: payload.email });
+  return res.json({ token });
 });
 
 module.exports = router;
