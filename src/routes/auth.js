@@ -84,7 +84,7 @@ router.get('/me', requireAuth, (req, res) => {
   return res.json({ id, email, role });
 });
 
-router.post('/logout', (req, res) => {
+router.post('/logout', requireAuth, (req, res) => {
   const sid = req.cookies && req.cookies[SESSION_COOKIE];
   destroySession(sid);
   res.clearCookie(SESSION_COOKIE);
