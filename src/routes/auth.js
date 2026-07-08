@@ -4,8 +4,11 @@ const { createOAuthClient, getAuthUrl } = require('../config/oauth');
 const { findOrCreateByGoogle } = require('../services/users');
 const { createSession, destroySession, TTL_MS } = require('../services/sessions');
 const { requireAuth, SESSION_COOKIE } = require('../middleware/requireAuth');
+const { authRateLimiter } = require('../middleware/rateLimit');
 
 const router = express.Router();
+
+router.use(authRateLimiter);
 
 const STATE_COOKIE = 'oauth_state';
 const STATE_COOKIE_OPTS = {
