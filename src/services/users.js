@@ -10,9 +10,16 @@ function findOrCreateByGoogle({ googleId, email }) {
   return user;
 }
 
+function findById(id) {
+  for (const user of users.values()) {
+    if (user.id === id) return user;
+  }
+  return null;
+}
+
 function reset() {
   users.clear();
   nextId = 1;
 }
 
-module.exports = { findOrCreateByGoogle, reset };
+module.exports = { findOrCreateByGoogle, findById, reset };

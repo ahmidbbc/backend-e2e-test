@@ -15,7 +15,8 @@ jest.mock('google-auth-library', () => ({
 }));
 
 const app = require('../src/app');
-const { reset } = require('../src/services/users');
+const { reset: resetUsers } = require('../src/services/users');
+const { reset: resetSessions } = require('../src/services/sessions');
 
 beforeAll(() => {
   process.env.GOOGLE_CLIENT_ID = 'test-id';
@@ -24,14 +25,27 @@ beforeAll(() => {
 
 beforeEach(() => {
   jest.clearAllMocks();
-  reset();
+  resetUsers();
+  resetSessions();
 });
 
-// Extracts the oauth_state cookie value from a Set-Cookie header array.
-function extractState(res) {
+// Extracts a named cookie's value from a Set-Cookie header array.
+function extractCookie(res, name) {
   const setCookie = res.headers['set-cookie'] || [];
-  const stateCookie = setCookie.find((c) => c.startsWith('oauth_state='));
-  return stateCookie ? stateCookie.split(';')[0].split('=')[1] : null;
+  const cookie = setCookie.find((c) => c.startsWith(`${name}=`));
+  return cookie ? cookie.split(';')[0].split('=')[1] : null;
+}
+
+// Drives a full successful login and returns the session cookie value.
+async function login() {
+  mockGetToken.mockResolvedValue({ tokens: { id_token: 'tok' } });
+  mockVerifyIdToken.mockResolvedValue({
+    getPayload: () => ({ sub: 'google-123', email: 'user@example.com' }),
+  });
+  const res = await request(app)
+    .get('/google/callback?state=s&code=good')
+    .set('Cookie', 'oauth_state=s');
+  return extractCookie(res, 'sid');
 }
 
 describe('GET /google', () => {
@@ -39,7 +53,7 @@ describe('GET /google', () => {
     const res = await request(app).get('/google');
     expect(res.status).toBe(302);
     expect(res.headers.location).toContain('accounts.google.com');
-    expect(extractState(res)).toBeTruthy();
+    expect(extractCookie(res, 'oauth_state')).toBeTruthy();
   });
 });
 
@@ -100,11 +114,52 @@ describe('GET /google/callback', () => {
       email: 'user@example.com',
       role: 'member',
     });
+    // A session cookie is issued on successful login.
+    expect(extractCookie(res, 'sid')).toBeTruthy();
 
     // Same Google user → same record, no new id.
     const res2 = await request(app)
       .get('/google/callback?state=s&code=good')
       .set('Cookie', 'oauth_state=s');
     expect(res2.body.id).toBe(1);
+  });
+});
+
+describe('session & requireAuth (GET /me)', () => {
+  it('200 returns the current user with a valid session cookie', async () => {
+    const sid = await login();
+    expect(sid).toBeTruthy();
+
+    const res = await request(app).get('/me').set('Cookie', `sid=${sid}`);
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({
+      id: 1,
+      email: 'user@example.com',
+      role: 'member',
+    });
+  });
+
+  it('401 when the session cookie is absent', async () => {
+    const res = await request(app).get('/me');
+    expect(res.status).toBe(401);
+    expect(res.body.error).toBe('unauthenticated');
+  });
+
+  it('401 when the session cookie is invalid', async () => {
+    const res = await request(app).get('/me').set('Cookie', 'sid=bogus');
+    expect(res.status).toBe(401);
+    expect(res.body.error).toBe('unauthenticated');
+  });
+
+  it('logout destroys the session so /me returns 401', async () => {
+    const sid = await login();
+
+    const logoutRes = await request(app)
+      .post('/logout')
+      .set('Cookie', `sid=${sid}`);
+    expect(logoutRes.status).toBe(204);
+
+    const meRes = await request(app).get('/me').set('Cookie', `sid=${sid}`);
+    expect(meRes.status).toBe(401);
   });
 });

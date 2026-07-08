@@ -2,6 +2,8 @@ const crypto = require('crypto');
 const express = require('express');
 const { createOAuthClient, getAuthUrl } = require('../config/oauth');
 const { findOrCreateByGoogle } = require('../services/users');
+const { createSession, destroySession, TTL_MS } = require('../services/sessions');
+const { requireAuth, SESSION_COOKIE } = require('../middleware/requireAuth');
 
 const router = express.Router();
 
@@ -10,6 +12,11 @@ const STATE_COOKIE_OPTS = {
   httpOnly: true,
   sameSite: 'lax',
   maxAge: 5 * 60 * 1000,
+};
+const SESSION_COOKIE_OPTS = {
+  httpOnly: true,
+  sameSite: 'lax',
+  maxAge: TTL_MS,
 };
 
 function statesMatch(a, b) {
@@ -66,7 +73,22 @@ router.get('/google/callback', async (req, res) => {
     email: payload.email,
   });
 
+  const sid = createSession(user);
+  res.cookie(SESSION_COOKIE, sid, SESSION_COOKIE_OPTS);
+
   return res.json({ id: user.id, email: user.email, role: user.role });
+});
+
+router.get('/me', requireAuth, (req, res) => {
+  const { id, email, role } = req.user;
+  return res.json({ id, email, role });
+});
+
+router.post('/logout', (req, res) => {
+  const sid = req.cookies && req.cookies[SESSION_COOKIE];
+  destroySession(sid);
+  res.clearCookie(SESSION_COOKIE);
+  return res.status(204).end();
 });
 
 module.exports = router;
