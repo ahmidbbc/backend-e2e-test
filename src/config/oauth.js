@@ -1,20 +1,9 @@
 const { OAuth2Client } = require('google-auth-library');
-
-const SCOPES = ['openid', 'email', 'profile'];
-const REDIRECT_URL =
-  process.env.GOOGLE_REDIRECT_URL || 'http://localhost:3000/google/callback';
+const { getAuthConfig, SCOPES } = require('./auth');
 
 function createOAuthClient() {
-  const clientId = process.env.GOOGLE_CLIENT_ID;
-  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-
-  if (!clientId || !clientSecret) {
-    throw new Error(
-      'Missing Google OAuth configuration: set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET'
-    );
-  }
-
-  return new OAuth2Client(clientId, clientSecret, REDIRECT_URL);
+  const { clientId, clientSecret, redirectUrl } = getAuthConfig();
+  return new OAuth2Client(clientId, clientSecret, redirectUrl);
 }
 
 function getAuthUrl(client, state) {
@@ -25,4 +14,4 @@ function getAuthUrl(client, state) {
   });
 }
 
-module.exports = { createOAuthClient, getAuthUrl, SCOPES, REDIRECT_URL };
+module.exports = { createOAuthClient, getAuthUrl, SCOPES };
