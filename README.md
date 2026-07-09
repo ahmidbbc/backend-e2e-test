@@ -12,7 +12,18 @@ npm test
 
 ## Rate limiting
 
-Auth routes are rate limited per IP. Tunable via env vars (no redeploy needed):
+The authentication routes (mounted under `/`, e.g. `GET /google`, `GET /google/callback`)
+are protected by a fixed-window rate limiter (`express-rate-limit`), keyed **per client IP**.
+
+### Default limits
+
+- **10 requests per 60 s window, per IP** (fixed window).
+- Counters are held in memory (per process). They reset when the window elapses
+  and are not shared across instances or restarts.
+
+### Configuration
+
+Tunable via environment variables (no redeploy needed):
 
 | Variable | Default | Description |
 | --- | --- | --- |
@@ -20,7 +31,27 @@ Auth routes are rate limited per IP. Tunable via env vars (no redeploy needed):
 | `RATE_LIMIT_WINDOW_MS` | `60000` | Window size in ms. |
 | `RATE_LIMIT_MAX` | `10` | Max requests per window per IP. |
 
-The limiter is always skipped when `NODE_ENV=test`.
+Invalid or non-positive numeric values fall back to the defaults. The limiter is
+always skipped when `NODE_ENV=test`.
+
+### Response codes & headers
+
+- **Within the limit** — the request is served normally (e.g. `200`/`302`).
+- **Limit exceeded** — `429 Too Many Requests` with a JSON body:
+
+  ```json
+  { "error": "too_many_requests", "retryAfter": 60 }
+  ```
+
+Every response carries rate-limit headers:
+
+| Header | Description |
+| --- | --- |
+| `RateLimit`, `RateLimit-Policy` | draft-7 standard headers (limit, remaining, reset). |
+| `X-RateLimit-Limit` | Max requests allowed in the window. |
+| `X-RateLimit-Remaining` | Requests left in the current window. |
+| `X-RateLimit-Reset` | Seconds until the window resets. |
+| `Retry-After` | Sent on a `429`: seconds to wait before retrying (derived from the window). |
 
 ## Manual GitHub config (required before E2E test)
 
