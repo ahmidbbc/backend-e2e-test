@@ -40,4 +40,25 @@ describe('authRateLimiter', () => {
     expect(blocked.status).toBe(429);
     expect(blocked.body.error).toBe('too_many_requests');
   });
+
+  it('exposes rate-limit headers and Retry-After on a 429', async () => {
+    process.env.NODE_ENV = 'production';
+    const app = makeApp();
+
+    let blocked;
+    for (let i = 0; i < 11; i += 1) {
+      blocked = await request(app).get('/google');
+    }
+
+    expect(blocked.status).toBe(429);
+    // Legacy X-RateLimit-* headers.
+    expect(blocked.headers['x-ratelimit-limit']).toBe('10');
+    expect(blocked.headers['x-ratelimit-remaining']).toBe('0');
+    expect(blocked.headers['x-ratelimit-reset']).toBeDefined();
+    // draft-7 combined RateLimit header.
+    expect(blocked.headers.ratelimit).toBeDefined();
+    // Retry-After (seconds until the window resets).
+    expect(blocked.headers['retry-after']).toBe('60');
+    expect(blocked.body.retryAfter).toBe(60);
+  });
 });
