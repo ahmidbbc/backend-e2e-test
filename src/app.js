@@ -8,6 +8,8 @@ app.use(cookieParser());
 
 app.get('/health', (_req, res) => res.json({ status: 'ok', uptime: process.uptime() }));
 
+app.get('/status', (_req, res) => res.json({ status: 'ok' }));
+
 app.use('/', authRouter);
 
 const PORT = process.env.PORT || 3000;
