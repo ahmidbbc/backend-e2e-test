@@ -10,6 +10,18 @@ npm install
 npm test
 ```
 
+## Rate limiting
+
+Auth routes are rate limited per IP. Tunable via env vars (no redeploy needed):
+
+| Variable | Default | Description |
+| --- | --- | --- |
+| `RATE_LIMIT_ENABLED` | `true` | Set to `false`/`0`/`no`/`off` to disable the limiter. |
+| `RATE_LIMIT_WINDOW_MS` | `60000` | Window size in ms. |
+| `RATE_LIMIT_MAX` | `10` | Max requests per window per IP. |
+
+The limiter is always skipped when `NODE_ENV=test`.
+
 ## Manual GitHub config (required before E2E test)
 
 - Enable `allow_auto_merge` in repo Settings → General
