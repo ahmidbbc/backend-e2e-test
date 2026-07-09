@@ -16,7 +16,7 @@ jest.mock('google-auth-library', () => ({
 
 const app = require('../src/app');
 const { reset: resetUsers } = require('../src/services/users');
-const { reset: resetSessions } = require('../src/services/sessions');
+const { reset: resetSessions, TTL_MS } = require('../src/services/sessions');
 
 beforeAll(() => {
   process.env.GOOGLE_CLIENT_ID = 'test-id';
@@ -99,6 +99,18 @@ describe('GET /google/callback', () => {
     expect(res.body.error).toBe('invalid_id_token');
   });
 
+  it('401 when the verified profile is missing sub/email', async () => {
+    mockGetToken.mockResolvedValueOnce({ tokens: { id_token: 'tok' } });
+    mockVerifyIdToken.mockResolvedValueOnce({
+      getPayload: () => ({ sub: 'google-123' }),
+    });
+    const res = await request(app)
+      .get('/google/callback?state=s&code=good')
+      .set('Cookie', 'oauth_state=s');
+    expect(res.status).toBe(401);
+    expect(res.body.error).toBe('invalid_profile');
+  });
+
   it('200 returns the user on success and creates then reuses it', async () => {
     mockGetToken.mockResolvedValue({ tokens: { id_token: 'tok' } });
     mockVerifyIdToken.mockResolvedValue({
@@ -149,6 +161,22 @@ describe('session & requireAuth (GET /me)', () => {
     const res = await request(app).get('/me').set('Cookie', 'sid=bogus');
     expect(res.status).toBe(401);
     expect(res.body.error).toBe('unauthenticated');
+  });
+
+  it('401 once the session has expired past its TTL', async () => {
+    const sid = await login();
+
+    // Jump past the session TTL so getSession treats it as expired.
+    const nowSpy = jest
+      .spyOn(Date, 'now')
+      .mockReturnValue(Date.now() + TTL_MS + 1);
+    try {
+      const res = await request(app).get('/me').set('Cookie', `sid=${sid}`);
+      expect(res.status).toBe(401);
+      expect(res.body.error).toBe('unauthenticated');
+    } finally {
+      nowSpy.mockRestore();
+    }
   });
 
   it('logout destroys the session so /me returns 401', async () => {
