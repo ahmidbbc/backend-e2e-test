@@ -1,12 +1,8 @@
 const crypto = require('crypto');
 const express = require('express');
-const {
-  getAuthorizationUrl,
-  exchangeCodeForProfile,
-  GoogleAuthError,
-} = require('../providers/google');
-const { findOrCreateByGoogle } = require('../services/users');
-const { createSession, destroySession, TTL_MS } = require('../services/sessions');
+const { getAuthorizationUrl, GoogleAuthError } = require('../providers/google');
+const { loginWithGoogle } = require('../usecases/loginWithGoogle');
+const { destroySession, TTL_MS } = require('../services/sessions');
 const { requireAuth, SESSION_COOKIE } = require('../middleware/requireAuth');
 const { authRateLimiter } = require('../middleware/rateLimit');
 
@@ -53,9 +49,10 @@ router.get('/google/callback', async (req, res) => {
     return res.status(400).json({ error: 'missing_code' });
   }
 
-  let profile;
+  let user;
+  let sessionId;
   try {
-    profile = await exchangeCodeForProfile(code);
+    ({ user, sessionId } = await loginWithGoogle(code));
   } catch (err) {
     if (err instanceof GoogleAuthError) {
       return res.status(401).json({ error: err.code });
@@ -63,10 +60,7 @@ router.get('/google/callback', async (req, res) => {
     throw err;
   }
 
-  const user = findOrCreateByGoogle(profile);
-
-  const sid = createSession(user);
-  res.cookie(SESSION_COOKIE, sid, SESSION_COOKIE_OPTS);
+  res.cookie(SESSION_COOKIE, sessionId, SESSION_COOKIE_OPTS);
 
   return res.json({ id: user.id, email: user.email, role: user.role });
 });
