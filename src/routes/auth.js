@@ -1,8 +1,9 @@
 const crypto = require('crypto');
 const express = require('express');
-const { createOAuthClient, getAuthUrl } = require('../config/oauth');
-const { findOrCreateByGoogle } = require('../services/users');
-const { createSession, destroySession, TTL_MS } = require('../services/sessions');
+const { getAuthorizationUrl, GoogleAuthError } = require('../providers/google');
+const { loginWithGoogle } = require('../usecases/loginWithGoogle');
+const { logout } = require('../usecases/logout');
+const { TTL_MS } = require('../services/sessions');
 const { requireAuth, SESSION_COOKIE } = require('../middleware/requireAuth');
 const { authRateLimiter } = require('../middleware/rateLimit');
 
@@ -33,8 +34,7 @@ function statesMatch(a, b) {
 router.get('/google', (_req, res) => {
   const state = crypto.randomBytes(16).toString('hex');
   res.cookie(STATE_COOKIE, state, STATE_COOKIE_OPTS);
-  const client = createOAuthClient();
-  return res.redirect(getAuthUrl(client, state));
+  return res.redirect(getAuthorizationUrl(state));
 });
 
 router.get('/google/callback', async (req, res) => {
@@ -50,34 +50,18 @@ router.get('/google/callback', async (req, res) => {
     return res.status(400).json({ error: 'missing_code' });
   }
 
-  const client = createOAuthClient();
-
-  let tokens;
+  let user;
+  let sessionId;
   try {
-    ({ tokens } = await client.getToken(code));
+    ({ user, sessionId } = await loginWithGoogle(code));
   } catch (err) {
-    return res.status(401).json({ error: 'token_exchange_failed' });
+    if (err instanceof GoogleAuthError) {
+      return res.status(401).json({ error: err.code });
+    }
+    throw err;
   }
 
-  let payload;
-  try {
-    const ticket = await client.verifyIdToken({ idToken: tokens.id_token });
-    payload = ticket.getPayload();
-  } catch (err) {
-    return res.status(401).json({ error: 'invalid_id_token' });
-  }
-
-  if (!payload || !payload.sub || !payload.email) {
-    return res.status(401).json({ error: 'invalid_profile' });
-  }
-
-  const user = findOrCreateByGoogle({
-    googleId: payload.sub,
-    email: payload.email,
-  });
-
-  const sid = createSession(user);
-  res.cookie(SESSION_COOKIE, sid, SESSION_COOKIE_OPTS);
+  res.cookie(SESSION_COOKIE, sessionId, SESSION_COOKIE_OPTS);
 
   return res.json({ id: user.id, email: user.email, role: user.role });
 });
@@ -89,7 +73,7 @@ router.get('/me', requireAuth, (req, res) => {
 
 router.post('/logout', requireAuth, (req, res) => {
   const sid = req.cookies && req.cookies[SESSION_COOKIE];
-  destroySession(sid);
+  logout(sid);
   res.clearCookie(SESSION_COOKIE);
   return res.status(204).end();
 });
