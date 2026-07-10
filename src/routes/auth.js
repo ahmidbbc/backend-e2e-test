@@ -2,7 +2,8 @@ const crypto = require('crypto');
 const express = require('express');
 const { getAuthorizationUrl, GoogleAuthError } = require('../providers/google');
 const { loginWithGoogle } = require('../usecases/loginWithGoogle');
-const { destroySession, TTL_MS } = require('../services/sessions');
+const { logout } = require('../usecases/logout');
+const { TTL_MS } = require('../services/sessions');
 const { requireAuth, SESSION_COOKIE } = require('../middleware/requireAuth');
 const { authRateLimiter } = require('../middleware/rateLimit');
 
@@ -72,7 +73,7 @@ router.get('/me', requireAuth, (req, res) => {
 
 router.post('/logout', requireAuth, (req, res) => {
   const sid = req.cookies && req.cookies[SESSION_COOKIE];
-  destroySession(sid);
+  logout(sid);
   res.clearCookie(SESSION_COOKIE);
   return res.status(204).end();
 });
