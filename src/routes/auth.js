@@ -1,6 +1,10 @@
 const crypto = require('crypto');
 const express = require('express');
-const { createOAuthClient, getAuthUrl } = require('../config/oauth');
+const {
+  getAuthorizationUrl,
+  exchangeCodeForProfile,
+  GoogleAuthError,
+} = require('../providers/google');
 const { findOrCreateByGoogle } = require('../services/users');
 const { createSession, destroySession, TTL_MS } = require('../services/sessions');
 const { requireAuth, SESSION_COOKIE } = require('../middleware/requireAuth');
@@ -33,8 +37,7 @@ function statesMatch(a, b) {
 router.get('/google', (_req, res) => {
   const state = crypto.randomBytes(16).toString('hex');
   res.cookie(STATE_COOKIE, state, STATE_COOKIE_OPTS);
-  const client = createOAuthClient();
-  return res.redirect(getAuthUrl(client, state));
+  return res.redirect(getAuthorizationUrl(state));
 });
 
 router.get('/google/callback', async (req, res) => {
@@ -50,31 +53,17 @@ router.get('/google/callback', async (req, res) => {
     return res.status(400).json({ error: 'missing_code' });
   }
 
-  const client = createOAuthClient();
-
-  let tokens;
+  let profile;
   try {
-    ({ tokens } = await client.getToken(code));
+    profile = await exchangeCodeForProfile(code);
   } catch (err) {
-    return res.status(401).json({ error: 'token_exchange_failed' });
+    if (err instanceof GoogleAuthError) {
+      return res.status(401).json({ error: err.code });
+    }
+    throw err;
   }
 
-  let payload;
-  try {
-    const ticket = await client.verifyIdToken({ idToken: tokens.id_token });
-    payload = ticket.getPayload();
-  } catch (err) {
-    return res.status(401).json({ error: 'invalid_id_token' });
-  }
-
-  if (!payload || !payload.sub || !payload.email) {
-    return res.status(401).json({ error: 'invalid_profile' });
-  }
-
-  const user = findOrCreateByGoogle({
-    googleId: payload.sub,
-    email: payload.email,
-  });
+  const user = findOrCreateByGoogle(profile);
 
   const sid = createSession(user);
   res.cookie(SESSION_COOKIE, sid, SESSION_COOKIE_OPTS);
