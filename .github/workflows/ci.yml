@@ -24,3 +24,8 @@ jobs:
 
       - name: Test
         run: npm test
+
+      # TEMPORARY — S1 variant V2: force CI failure to validate the "tests failed"
+      # vocal path + no-auto-merge. Remove after V2 is validated.
+      - name: Force failure (V2 test)
+        run: exit 1
