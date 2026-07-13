@@ -16,7 +16,10 @@ app.get('/health', async (_req, res) => {
   });
 });
 
-app.get('/status', (_req, res) => res.json({ status: 'ok' }));
+app.get('/status', async (_req, res) => {
+  const db = await checkDatabaseConnection();
+  res.json({ status: 'ok', dbLatencyMs: db.latencyMs });
+});
 
 app.use('/', authRouter);
 
