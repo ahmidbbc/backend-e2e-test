@@ -1,5 +1,5 @@
 const DEFAULT_WINDOW_MS = 60 * 1000;
-const DEFAULT_LIMIT = 10;
+const DEFAULT_LIMIT = 1000;
 
 function parsePositiveInt(value, fallback) {
   const parsed = Number.parseInt(value, 10);
