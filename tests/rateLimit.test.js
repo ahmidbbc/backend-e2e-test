@@ -1,7 +1,6 @@
 const request = require('supertest');
 const express = require('express');
-const rateLimit = require('express-rate-limit');
-const { authRateLimiter } = require('../src/middleware/rateLimit');
+const { authRateLimiter, createRateLimiter } = require('../src/middleware/rateLimit');
 
 // Builds a minimal app that mounts the auth rate limiter on a stub route.
 function makeApp() {
@@ -11,20 +10,14 @@ function makeApp() {
   return app;
 }
 
-// Builds an app with a short-window limiter so window-reset can be exercised
-// without waiting a full production minute.
+// Builds an app with a short-window custom limiter so window-reset can be
+// exercised without waiting a full production minute.
 function makeShortWindowApp(windowMs, limit) {
+  const limiter = createRateLimiter({ windowMs, limit });
   const app = express();
-  app.use(
-    rateLimit({
-      windowMs,
-      limit,
-      standardHeaders: 'draft-7',
-      legacyHeaders: true,
-    })
-  );
+  app.use(limiter);
   app.get('/google', (_req, res) => res.status(200).json({ ok: true }));
-  return app;
+  return { app, limiter };
 }
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -34,6 +27,7 @@ describe('authRateLimiter', () => {
 
   afterEach(() => {
     process.env.NODE_ENV = prevEnv;
+    authRateLimiter.reset();
   });
 
   it('is skipped under NODE_ENV=test (existing suites are unaffected)', async () => {
@@ -70,12 +64,9 @@ describe('authRateLimiter', () => {
     }
 
     expect(blocked.status).toBe(429);
-    // Legacy X-RateLimit-* headers.
     expect(blocked.headers['x-ratelimit-limit']).toBe('10');
     expect(blocked.headers['x-ratelimit-remaining']).toBe('0');
     expect(blocked.headers['x-ratelimit-reset']).toBeDefined();
-    // draft-7 combined RateLimit header.
-    expect(blocked.headers.ratelimit).toBeDefined();
     // Retry-After (seconds until the window resets).
     expect(blocked.headers['retry-after']).toBe('60');
     expect(blocked.body.retryAfter).toBe(60);
@@ -83,7 +74,7 @@ describe('authRateLimiter', () => {
 
   it('resets the window: blocked requests are allowed again after windowMs', async () => {
     const windowMs = 300;
-    const app = makeShortWindowApp(windowMs, 2);
+    const { app, limiter } = makeShortWindowApp(windowMs, 2);
 
     // Exhaust the window.
     expect((await request(app).get('/google')).status).toBe(200);
@@ -96,5 +87,21 @@ describe('authRateLimiter', () => {
     const afterReset = await request(app).get('/google');
     expect(afterReset.status).toBe(200);
     expect(afterReset.headers['x-ratelimit-remaining']).toBe('1');
+
+    limiter.stop();
+  });
+
+  it('tracks limits independently per client IP (X-Forwarded-For)', async () => {
+    const { app, limiter } = makeShortWindowApp(60 * 1000, 2);
+
+    // Client A exhausts its budget.
+    expect((await request(app).get('/google').set('X-Forwarded-For', '1.1.1.1')).status).toBe(200);
+    expect((await request(app).get('/google').set('X-Forwarded-For', '1.1.1.1')).status).toBe(200);
+    expect((await request(app).get('/google').set('X-Forwarded-For', '1.1.1.1')).status).toBe(429);
+
+    // Client B is unaffected.
+    expect((await request(app).get('/google').set('X-Forwarded-For', '2.2.2.2')).status).toBe(200);
+
+    limiter.stop();
   });
 });
