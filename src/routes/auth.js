@@ -19,6 +19,9 @@ const STATE_COOKIE_OPTS = {
 };
 const SESSION_COOKIE_OPTS = {
   httpOnly: true,
+  // Secure only in production: browsers (and the test cookie jar) drop Secure
+  // cookies over plain HTTP, which local dev and the test server use.
+  secure: process.env.NODE_ENV === 'production',
   sameSite: 'lax',
   maxAge: TTL_MS,
 };

@@ -135,6 +135,48 @@ describe('GET /google/callback', () => {
       .set('Cookie', 'oauth_state=s');
     expect(res2.body.id).toBe(1);
   });
+
+  it('sets the session cookie with HttpOnly and SameSite attributes', async () => {
+    mockGetToken.mockResolvedValue({ tokens: { id_token: 'tok' } });
+    mockVerifyIdToken.mockResolvedValue({
+      getPayload: () => ({ sub: 'google-123', email: 'user@example.com' }),
+    });
+
+    const res = await request(app)
+      .get('/google/callback?state=s&code=good')
+      .set('Cookie', 'oauth_state=s');
+
+    const sidCookie = (res.headers['set-cookie'] || []).find((c) => c.startsWith('sid='));
+    expect(sidCookie).toMatch(/HttpOnly/i);
+    expect(sidCookie).toMatch(/SameSite=Lax/i);
+    // Not Secure over plain HTTP outside production.
+    expect(sidCookie).not.toMatch(/Secure/i);
+  });
+
+  it('marks the session cookie Secure in production', async () => {
+    mockGetToken.mockResolvedValue({ tokens: { id_token: 'tok' } });
+    mockVerifyIdToken.mockResolvedValue({
+      getPayload: () => ({ sub: 'google-123', email: 'user@example.com' }),
+    });
+
+    const prevEnv = process.env.NODE_ENV;
+    process.env.NODE_ENV = 'production';
+    try {
+      let prodApp;
+      jest.isolateModules(() => {
+        prodApp = require('../src/app');
+      });
+
+      const res = await request(prodApp)
+        .get('/google/callback?state=s&code=good')
+        .set('Cookie', 'oauth_state=s');
+
+      const sidCookie = (res.headers['set-cookie'] || []).find((c) => c.startsWith('sid='));
+      expect(sidCookie).toMatch(/Secure/i);
+    } finally {
+      process.env.NODE_ENV = prevEnv;
+    }
+  });
 });
 
 describe('session & requireAuth (GET /me)', () => {
