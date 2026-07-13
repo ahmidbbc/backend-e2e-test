@@ -9,7 +9,9 @@ const { authRateLimiter } = require('../middleware/rateLimit');
 
 const router = express.Router();
 
-router.use(authRateLimiter);
+// Rate limiting is applied per-route (first in each chain, before requireAuth)
+// so it covers only the Google OAuth endpoints and never leaks onto other
+// paths that fall through this router.
 
 const STATE_COOKIE = 'oauth_state';
 const STATE_COOKIE_OPTS = {
@@ -34,13 +36,13 @@ function statesMatch(a, b) {
   return crypto.timingSafeEqual(bufA, bufB);
 }
 
-router.get('/google', (_req, res) => {
+router.get('/google', authRateLimiter, (_req, res) => {
   const state = crypto.randomBytes(16).toString('hex');
   res.cookie(STATE_COOKIE, state, STATE_COOKIE_OPTS);
   return res.redirect(getAuthorizationUrl(state));
 });
 
-router.get('/google/callback', async (req, res) => {
+router.get('/google/callback', authRateLimiter, async (req, res) => {
   const { code, state } = req.query;
   const cookieState = req.cookies && req.cookies[STATE_COOKIE];
 
@@ -69,12 +71,12 @@ router.get('/google/callback', async (req, res) => {
   return res.json({ id: user.id, email: user.email, role: user.role });
 });
 
-router.get('/me', requireAuth, (req, res) => {
+router.get('/me', authRateLimiter, requireAuth, (req, res) => {
   const { id, email, role } = req.user;
   return res.json({ id, email, role });
 });
 
-router.post('/logout', requireAuth, (req, res) => {
+router.post('/logout', authRateLimiter, requireAuth, (req, res) => {
   const sid = req.cookies && req.cookies[SESSION_COOKIE];
   logout(sid);
   res.clearCookie(SESSION_COOKIE);
