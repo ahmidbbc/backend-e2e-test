@@ -10,6 +10,26 @@ npm install
 npm test
 ```
 
+## Health check
+
+`GET /health` verifies the database connection in addition to reporting uptime.
+The check opens a TCP connection to the host/port from `DATABASE_URL` and
+measures round-trip latency.
+
+- **DB reachable** — `200`:
+
+  ```json
+  { "status": "ok", "uptime": 12.3, "database": { "connected": true, "latencyMs": 3 } }
+  ```
+
+- **DB unreachable** — `503`:
+
+  ```json
+  { "status": "degraded", "uptime": 12.3, "database": { "connected": false, "latencyMs": 12, "error": "ECONNREFUSED" } }
+  ```
+
+`GET /status` remains a lightweight liveness probe that does not touch the database.
+
 ## Rate limiting
 
 The authentication routes (mounted under `/`, e.g. `GET /google`, `GET /google/callback`)
