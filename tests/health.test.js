@@ -15,6 +15,7 @@ describe('GET /health', () => {
     expect(res.status).toBe(200);
     expect(res.body.status).toBe('ok');
     expect(res.body.database).toEqual({ connected: true, latencyMs: 3 });
+    expect(res.body.db_latency_ms).toBe(3);
     expect(typeof res.body.uptime).toBe('number');
   });
 
@@ -30,6 +31,7 @@ describe('GET /health', () => {
     expect(res.status).toBe(503);
     expect(res.body.status).toBe('degraded');
     expect(res.body.database.connected).toBe(false);
+    expect(res.body.db_latency_ms).toBe(12);
     expect(res.body.database.error).toBe('ECONNREFUSED');
   });
 });

@@ -12,6 +12,7 @@ app.get('/health', async (_req, res) => {
   res.status(db.connected ? 200 : 503).json({
     status: db.connected ? 'ok' : 'degraded',
     uptime: process.uptime(),
+    db_latency_ms: db.latencyMs,
     database: db,
   });
 });
