@@ -40,11 +40,11 @@ describe('authRateLimiter', () => {
     expect(last.status).toBe(200);
   });
 
-  it('allows 10 requests per minute then returns 429', async () => {
+  it('allows 1000 requests per minute then returns 429', async () => {
     process.env.NODE_ENV = 'production';
     const app = makeApp();
 
-    for (let i = 0; i < 10; i += 1) {
+    for (let i = 0; i < 1000; i += 1) {
       const res = await request(app).get('/google');
       expect(res.status).toBe(200);
     }
@@ -59,12 +59,12 @@ describe('authRateLimiter', () => {
     const app = makeApp();
 
     let blocked;
-    for (let i = 0; i < 11; i += 1) {
+    for (let i = 0; i < 1001; i += 1) {
       blocked = await request(app).get('/google');
     }
 
     expect(blocked.status).toBe(429);
-    expect(blocked.headers['x-ratelimit-limit']).toBe('10');
+    expect(blocked.headers['x-ratelimit-limit']).toBe('1000');
     expect(blocked.headers['x-ratelimit-remaining']).toBe('0');
     expect(blocked.headers['x-ratelimit-reset']).toBeDefined();
     // Retry-After (seconds until the window resets).
