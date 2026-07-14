@@ -2,6 +2,7 @@ const express = require('express');
 const cookieParser = require('cookie-parser');
 const authRouter = require('./routes/auth');
 const { checkDatabaseConnection } = require('./services/dbHealth');
+const { version } = require('../package.json');
 
 const app = express();
 app.use(express.json());
@@ -17,6 +18,8 @@ app.get('/health', async (_req, res) => {
 });
 
 app.get('/status', (_req, res) => res.json({ status: 'ok' }));
+
+app.get('/version', (_req, res) => res.json({ version }));
 
 app.use('/', authRouter);
 
