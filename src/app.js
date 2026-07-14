@@ -21,6 +21,8 @@ app.get('/status', (_req, res) => res.json({ status: 'ok' }));
 
 app.get('/version', (_req, res) => res.json({ version }));
 
+app.get('/time', (_req, res) => res.json({ time: new Date().toISOString() }));
+
 app.use('/', authRouter);
 
 const PORT = process.env.PORT || 3000;
