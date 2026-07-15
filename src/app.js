@@ -51,6 +51,8 @@ app.get('/version', (_req, res) => res.json({ version }));
 
 app.get('/time', (_req, res) => res.json({ time: new Date().toISOString() }));
 
+app.get('/ping', (_req, res) => res.json({ message: 'Pong', timestamp: new Date().toISOString() }));
+
 app.get('/routes', (_req, res) => res.json({ routes: listRoutes(app) }));
 
 app.use('/', authRouter);
