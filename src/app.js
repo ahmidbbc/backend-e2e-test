@@ -55,6 +55,16 @@ app.get('/time', (_req, res) => res.json({ time: new Date().toISOString() }));
 
 app.get('/routes', (_req, res) => res.json({ routes: listRoutes(app) }));
 
+// Echoes back the caller-supplied text as-is. Reads `text` from the query
+// string (GET) or the JSON body (POST); missing input echoes an empty string.
+function echoHandler(req, res) {
+  const text = req.method === 'POST' ? req.body && req.body.text : req.query.text;
+  res.json({ text: text == null ? '' : String(text) });
+}
+
+app.get('/echo', echoHandler);
+app.post('/echo', echoHandler);
+
 app.use('/', authRouter);
 
 const PORT = process.env.PORT || 3000;
