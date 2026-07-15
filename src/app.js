@@ -49,6 +49,8 @@ app.get('/status', (_req, res) => res.json({ status: 'ok' }));
 
 app.get('/version', (_req, res) => res.json({ version }));
 
+app.get('/ping', (_req, res) => res.json({ ping: 'ping', version }));
+
 app.get('/time', (_req, res) => res.json({ time: new Date().toISOString() }));
 
 app.get('/routes', (_req, res) => res.json({ routes: listRoutes(app) }));
