@@ -47,7 +47,7 @@ app.get('/health', async (_req, res) => {
 
 app.get('/status', (_req, res) => res.json({ status: 'ok' }));
 
-app.get('/version', (_req, res) => res.json({ version }));
+app.get('/version', (_req, res) => res.json({ ver: version }));
 
 app.get('/time', (_req, res) => res.json({ time: new Date().toISOString() }));
 
