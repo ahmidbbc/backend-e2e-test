@@ -48,7 +48,7 @@ app.get('/health', async (_req, res) => {
 
 app.get('/status', (_req, res) => res.json({ status: 'ok' }));
 
-app.get('/version', (_req, res) => res.json({ ver: version }));
+app.get('/version', (_req, res) => res.json({ version }));
 
 app.get('/ping', (_req, res) => res.json({ ping: 1, timestamp: new Date().toISOString() }));
 
@@ -67,6 +67,14 @@ function echoHandler(req, res) {
 
 app.get('/echo', echoHandler);
 app.post('/echo', echoHandler);
+
+// Reverses the caller-supplied `text` query param; missing input reverses an
+// empty string. Uses Array.from so multi-byte characters (emoji, accents)
+// are reversed by code point rather than by UTF-16 unit.
+app.get('/reverse', (req, res) => {
+  const text = req.query.text == null ? '' : String(req.query.text);
+  res.json({ reversed: Array.from(text).reverse().join('') });
+});
 
 app.use('/', authRouter);
 
