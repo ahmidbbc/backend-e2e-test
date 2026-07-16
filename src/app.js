@@ -68,6 +68,14 @@ function echoHandler(req, res) {
 app.get('/echo', echoHandler);
 app.post('/echo', echoHandler);
 
+// Reverses the caller-supplied `text` query param; missing input reverses an
+// empty string. Uses Array.from so multi-byte characters (emoji, accents)
+// are reversed by code point rather than by UTF-16 unit.
+app.get('/reverse', (req, res) => {
+  const text = req.query.text == null ? '' : String(req.query.text);
+  res.json({ reversed: Array.from(text).reverse().join('') });
+});
+
 app.use('/', authRouter);
 
 const PORT = process.env.PORT || 3000;
