@@ -91,6 +91,13 @@ app.get('/slug', (req, res) => {
   res.json({ slug, length: Array.from(slug).length });
 });
 
+// Encodes the caller-supplied `text` query param to base64 (UTF-8 bytes) and
+// returns the encoded string; missing input encodes an empty string.
+app.get('/base64', (req, res) => {
+  const text = req.query.text == null ? '' : String(req.query.text);
+  res.json({ base64: Buffer.from(text, 'utf8').toString('base64') });
+});
+
 app.use('/', authRouter);
 
 const PORT = process.env.PORT || 3000;
