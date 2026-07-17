@@ -137,6 +137,30 @@ app.get('/palindrome', (req, res) => {
   res.json({ mot, isPalindrome });
 });
 
+// Reports whether the two caller-supplied words `a` and `b` are anagrams of
+// each other. Comparison is case-insensitive, strips accents, and ignores
+// non-alphanumeric characters (spaces, punctuation). Sorts the remaining
+// code points and compares. Two missing/empty inputs count as anagrams.
+function normalizeForAnagram(raw) {
+  const text = raw == null ? '' : String(raw);
+  return Array.from(
+    text
+      .normalize('NFKD')
+      .replace(/[̀-ͯ]/g, '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, ''),
+  )
+    .sort()
+    .join('');
+}
+
+app.get('/anagramme', (req, res) => {
+  const a = req.query.a == null ? '' : String(req.query.a);
+  const b = req.query.b == null ? '' : String(req.query.b);
+  const isAnagram = normalizeForAnagram(a) === normalizeForAnagram(b);
+  res.json({ a, b, isAnagram });
+});
+
 app.use('/', authRouter);
 
 const PORT = process.env.PORT || 3000;
