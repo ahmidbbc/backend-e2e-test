@@ -48,7 +48,7 @@ app.get('/health', async (_req, res) => {
 
 app.get('/status', (_req, res) => res.json({ status: 'ok' }));
 
-app.get('/version', (_req, res) => res.json({ ver: version }));
+app.get('/version', (_req, res) => res.json({ version }));
 
 app.get('/ping', (_req, res) => res.json({ ping: 1, timestamp: new Date().toISOString() }));
 
@@ -89,6 +89,13 @@ app.get('/slug', (req, res) => {
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '');
   res.json({ slug, length: Array.from(slug).length });
+});
+
+// Encodes the caller-supplied `text` query param to base64 (UTF-8 bytes) and
+// returns the encoded string; missing input encodes an empty string.
+app.get('/base64', (req, res) => {
+  const text = req.query.text == null ? '' : String(req.query.text);
+  res.json({ base64: Buffer.from(text, 'utf8').toString('base64') });
 });
 
 app.use('/', authRouter);
