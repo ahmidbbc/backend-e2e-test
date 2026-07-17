@@ -19,4 +19,16 @@ describe('GET /reverse', () => {
     expect(res.status).toBe(200);
     expect(res.body).toEqual({ reversed: '😀éa' });
   });
+
+  it('also returns the digit sum when the input is all digits', async () => {
+    const res = await request(app).get('/reverse').query({ text: '123' });
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ reversed: '321', sum: 6 });
+  });
+
+  it('does not add a sum for non-digit input', async () => {
+    const res = await request(app).get('/reverse').query({ text: 'hello' });
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ reversed: 'olleh' });
+  });
 });

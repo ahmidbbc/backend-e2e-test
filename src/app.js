@@ -70,10 +70,16 @@ app.post('/echo', echoHandler);
 
 // Reverses the caller-supplied `text` query param; missing input reverses an
 // empty string. Uses Array.from so multi-byte characters (emoji, accents)
-// are reversed by code point rather than by UTF-16 unit.
+// are reversed by code point rather than by UTF-16 unit. When the input is a
+// non-empty run of digits, the response also carries their `sum`.
 app.get('/reverse', (req, res) => {
   const text = req.query.text == null ? '' : String(req.query.text);
-  res.json({ reversed: Array.from(text).reverse().join('') });
+  const reversed = Array.from(text).reverse().join('');
+  const body = { reversed };
+  if (/^\d+$/.test(text)) {
+    body.sum = Array.from(text).reduce((acc, d) => acc + Number(d), 0);
+  }
+  res.json(body);
 });
 
 // Slugifies the caller-supplied `text` query param and returns the slug along
