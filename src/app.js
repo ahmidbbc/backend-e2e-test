@@ -48,7 +48,7 @@ app.get('/health', async (_req, res) => {
 
 app.get('/status', (_req, res) => res.json({ status: 'ok' }));
 
-app.get('/version', (_req, res) => res.json({ ver: version }));
+app.get('/version', (_req, res) => res.json({ version }));
 
 app.get('/ping', (_req, res) => res.json({ ping: 1, timestamp: new Date().toISOString() }));
 
@@ -96,6 +96,12 @@ app.get('/slug', (req, res) => {
 app.get('/base64', (req, res) => {
   const text = req.query.text == null ? '' : String(req.query.text);
   res.json({ base64: Buffer.from(text, 'utf8').toString('base64') });
+});
+
+// Returns the number of characters (code points) in the `:id` path param.
+app.get('/compte/:id', (req, res) => {
+  const id = String(req.params.id);
+  res.json({ id, length: Array.from(id).length });
 });
 
 app.use('/', authRouter);
