@@ -2,6 +2,12 @@ const request = require('supertest');
 const app = require('../src/app');
 
 describe('GET /reverse', () => {
+  it('reverses the texte query param', async () => {
+    const res = await request(app).get('/reverse').query({ texte: 'hello' });
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ reversed: 'olleh' });
+  });
+
   it('reverses the text query param', async () => {
     const res = await request(app).get('/reverse').query({ text: 'hello' });
     expect(res.status).toBe(200);
