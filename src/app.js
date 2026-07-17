@@ -70,10 +70,16 @@ app.post('/echo', echoHandler);
 
 // Reverses the caller-supplied `text` query param; missing input reverses an
 // empty string. Uses Array.from so multi-byte characters (emoji, accents)
-// are reversed by code point rather than by UTF-16 unit.
+// are reversed by code point rather than by UTF-16 unit. When the input is a
+// non-empty run of digits, the response also carries their `sum`.
 app.get('/reverse', (req, res) => {
   const text = req.query.text == null ? '' : String(req.query.text);
-  res.json({ reversed: Array.from(text).reverse().join('') });
+  const reversed = Array.from(text).reverse().join('');
+  const body = { reversed };
+  if (/^\d+$/.test(text)) {
+    body.sum = Array.from(text).reduce((acc, d) => acc + Number(d), 0);
+  }
+  res.json(body);
 });
 
 // Slugifies the caller-supplied `text` query param and returns the slug along
@@ -96,6 +102,13 @@ app.get('/slug', (req, res) => {
 app.get('/base64', (req, res) => {
   const text = req.query.text == null ? '' : String(req.query.text);
   res.json({ base64: Buffer.from(text, 'utf8').toString('base64') });
+});
+
+// Returns the number of characters (code points) in the `text` query param;
+// missing input counts an empty string (0).
+app.get('/compte', (req, res) => {
+  const text = req.query.text == null ? '' : String(req.query.text);
+  res.json({ text, length: Array.from(text).length });
 });
 
 // Returns the number of characters (code points) in the `:id` path param.
