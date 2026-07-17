@@ -98,6 +98,13 @@ app.get('/base64', (req, res) => {
   res.json({ base64: Buffer.from(text, 'utf8').toString('base64') });
 });
 
+// Returns the number of characters (code points) in the `text` query param;
+// missing input counts an empty string (0).
+app.get('/compte', (req, res) => {
+  const text = req.query.text == null ? '' : String(req.query.text);
+  res.json({ text, length: Array.from(text).length });
+});
+
 // Returns the number of characters (code points) in the `:id` path param.
 app.get('/compte/:id', (req, res) => {
   const id = String(req.params.id);
