@@ -98,6 +98,12 @@ app.get('/base64', (req, res) => {
   res.json({ base64: Buffer.from(text, 'utf8').toString('base64') });
 });
 
+// Returns the number of characters (code points) in the `:id` path param.
+app.get('/compte/:id', (req, res) => {
+  const id = String(req.params.id);
+  res.json({ id, length: Array.from(id).length });
+});
+
 app.use('/', authRouter);
 
 const PORT = process.env.PORT || 3000;
