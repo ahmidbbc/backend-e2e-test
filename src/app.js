@@ -126,6 +126,17 @@ app.get('/compte/:id', (req, res) => {
   res.json({ id, length: Array.from(id).length });
 });
 
+// Reports whether the caller-supplied `mot` query param is a palindrome.
+// Uses Array.from so multi-byte characters (emoji, accents) are compared by
+// code point rather than by UTF-16 unit. Missing input is treated as an empty
+// string, which counts as a palindrome.
+app.get('/palindrome', (req, res) => {
+  const mot = req.query.mot == null ? '' : String(req.query.mot);
+  const chars = Array.from(mot);
+  const isPalindrome = chars.join('') === chars.reverse().join('');
+  res.json({ mot, isPalindrome });
+});
+
 app.use('/', authRouter);
 
 const PORT = process.env.PORT || 3000;
