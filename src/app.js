@@ -68,6 +68,17 @@ function echoHandler(req, res) {
 app.get('/echo', echoHandler);
 app.post('/echo', echoHandler);
 
+// Uppercases the caller-supplied text. Reads `text` from the query string (GET)
+// or the JSON body (POST); missing input uppercases an empty string.
+function upperHandler(req, res) {
+  const raw = req.method === 'POST' ? req.body && req.body.text : req.query.text;
+  const text = raw == null ? '' : String(raw);
+  res.json({ upper: text.toUpperCase() });
+}
+
+app.get('/upper', upperHandler);
+app.post('/upper', upperHandler);
+
 // Reverses the caller-supplied `text` query param; missing input reverses an
 // empty string. Uses Array.from so multi-byte characters (emoji, accents)
 // are reversed by code point rather than by UTF-16 unit.
