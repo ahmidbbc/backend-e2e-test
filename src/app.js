@@ -76,6 +76,21 @@ app.get('/reverse', (req, res) => {
   res.json({ reversed: Array.from(text).reverse().join('') });
 });
 
+// Slugifies the caller-supplied `text` query param and returns the slug along
+// with its length (code-point count). Normalizes accents away, lowercases,
+// and collapses any run of non-alphanumeric characters into single hyphens,
+// trimming leading/trailing hyphens. Missing input yields an empty slug.
+app.get('/slug', (req, res) => {
+  const text = req.query.text == null ? '' : String(req.query.text);
+  const slug = text
+    .normalize('NFKD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  res.json({ slug, length: Array.from(slug).length });
+});
+
 app.use('/', authRouter);
 
 const PORT = process.env.PORT || 3000;
