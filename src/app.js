@@ -48,7 +48,7 @@ app.get('/health', async (_req, res) => {
 
 app.get('/status', (_req, res) => res.json({ status: 'ok' }));
 
-app.get('/version', (_req, res) => res.json({ ver: version }));
+app.get('/version', (_req, res) => res.json({ version }));
 
 app.get('/ping', (_req, res) => res.json({ ping: 1, timestamp: new Date().toISOString() }));
 
@@ -124,6 +124,17 @@ app.get('/compte', (req, res) => {
 app.get('/compte/:id', (req, res) => {
   const id = String(req.params.id);
   res.json({ id, length: Array.from(id).length });
+});
+
+// Reports whether the caller-supplied `mot` query param is a palindrome.
+// Uses Array.from so multi-byte characters (emoji, accents) are compared by
+// code point rather than by UTF-16 unit. Missing input is treated as an empty
+// string, which counts as a palindrome.
+app.get('/palindrome', (req, res) => {
+  const mot = req.query.mot == null ? '' : String(req.query.mot);
+  const chars = Array.from(mot);
+  const isPalindrome = chars.join('') === chars.reverse().join('');
+  res.json({ mot, isPalindrome });
 });
 
 app.use('/', authRouter);
