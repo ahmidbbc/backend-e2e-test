@@ -52,6 +52,8 @@ app.get('/version', (_req, res) => res.json({ version }));
 
 app.get('/ping', (_req, res) => res.json({ ping: 1, timestamp: new Date().toISOString() }));
 
+app.get('/ready', (_req, res) => res.type('text/plain').send('je suis prêt'));
+
 app.get('/time', (_req, res) => res.json({ time: new Date().toISOString() }));
 
 app.get('/uuid', (_req, res) => res.json({ uuid: crypto.randomUUID(), version }));
