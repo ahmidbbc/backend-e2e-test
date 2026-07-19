@@ -3,6 +3,7 @@ const express = require('express');
 const cookieParser = require('cookie-parser');
 const authRouter = require('./routes/auth');
 const { checkDatabaseConnection } = require('./services/dbHealth');
+const { fibonacci } = require('./services/fibonacci');
 const { version } = require('../package.json');
 
 const app = express();
@@ -196,6 +197,22 @@ app.get('/celsius', (req, res) => {
   }
   const celsius = ((fahrenheit - 32) * 5) / 9;
   return res.json({ fahrenheit, celsius });
+});
+
+// Computes the nth Fibonacci number (0-indexed) from the caller-supplied `n`
+// query param and returns it. `n` must be a non-negative integer; anything
+// else yields a 400. `n` is capped at 100000 to bound compute time. The result
+// is serialized as a string so it survives JSON for large inputs.
+app.get('/fibonacci', (req, res) => {
+  const raw = req.query.n;
+  if (raw == null || !/^\d+$/.test(String(raw))) {
+    return res.status(400).json({ error: 'invalid_input' });
+  }
+  const n = Number(raw);
+  if (n > 100000) {
+    return res.status(400).json({ error: 'out_of_range' });
+  }
+  return res.json({ n, fibonacci: fibonacci(n).toString() });
 });
 
 // Counts the words in the caller-supplied `text` query param and returns the
