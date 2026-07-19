@@ -198,6 +198,16 @@ app.get('/celsius', (req, res) => {
   return res.json({ fahrenheit, celsius });
 });
 
+// Counts the words in the caller-supplied `text` query param and returns the
+// count. Words are runs of non-whitespace separated by whitespace; leading,
+// trailing, and repeated separators are ignored. Missing or blank input yields
+// a count of 0.
+app.get('/wordCount', (req, res) => {
+  const text = req.query.text == null ? '' : String(req.query.text);
+  const words = text.trim() === '' ? [] : text.trim().split(/\s+/);
+  res.json({ text, wordCount: words.length });
+});
+
 app.use('/', authRouter);
 
 const PORT = process.env.PORT || 3000;
