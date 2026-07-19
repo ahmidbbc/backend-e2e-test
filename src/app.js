@@ -186,6 +186,18 @@ app.get('/factorielle', (req, res) => {
   return res.json({ n, factorielle: result.toString() });
 });
 
+// Converts the caller-supplied `fahrenheit` query param to Celsius and returns
+// both values. The input must be a finite number; anything else yields a 400.
+app.get('/celsius', (req, res) => {
+  const raw = req.query.fahrenheit;
+  const fahrenheit = Number(raw);
+  if (raw == null || raw === '' || !Number.isFinite(fahrenheit)) {
+    return res.status(400).json({ error: 'invalid_input' });
+  }
+  const celsius = ((fahrenheit - 32) * 5) / 9;
+  return res.json({ fahrenheit, celsius });
+});
+
 app.use('/', authRouter);
 
 const PORT = process.env.PORT || 3000;
