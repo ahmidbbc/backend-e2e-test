@@ -60,6 +60,8 @@ app.get('/uuid', (_req, res) => res.json({ uuid: crypto.randomUUID(), version })
 
 app.get('/routes', (_req, res) => res.json({ routes: listRoutes(app) }));
 
+app.get('/elfe', (_req, res) => res.status(200).json({ status: 'ok' }));
+
 // Echoes back the caller-supplied text as-is. Reads `text` from the query
 // string (GET) or the JSON body (POST); missing input echoes an empty string.
 function echoHandler(req, res) {
