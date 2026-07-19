@@ -165,6 +165,27 @@ app.get('/anagramme', (req, res) => {
   res.json({ a, b, isAnagram });
 });
 
+// Computes the factorial of the caller-supplied `n` query param and returns it.
+// `n` must be a non-negative integer; anything else yields a 400. The result is
+// computed with BigInt to stay exact for large inputs and serialized as a
+// string so it survives JSON (which cannot represent BigInt or precise large
+// numbers). `n` is capped at 10000 to bound compute time.
+app.get('/factorielle', (req, res) => {
+  const raw = req.query.n;
+  if (raw == null || !/^\d+$/.test(String(raw))) {
+    return res.status(400).json({ error: 'invalid_input' });
+  }
+  const n = Number(raw);
+  if (n > 10000) {
+    return res.status(400).json({ error: 'out_of_range' });
+  }
+  let result = 1n;
+  for (let i = 2n; i <= BigInt(n); i += 1n) {
+    result *= i;
+  }
+  return res.json({ n, factorielle: result.toString() });
+});
+
 app.use('/', authRouter);
 
 const PORT = process.env.PORT || 3000;
