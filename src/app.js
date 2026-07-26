@@ -2,6 +2,7 @@ const crypto = require('crypto');
 const express = require('express');
 const cookieParser = require('cookie-parser');
 const authRouter = require('./routes/auth');
+const { listOrders } = require('./usecases/listOrders');
 const { checkDatabaseConnection } = require('./services/dbHealth');
 const { version } = require('../package.json');
 
@@ -59,6 +60,16 @@ app.get('/time', (_req, res) => res.json({ time: new Date().toISOString() }));
 app.get('/uuid', (_req, res) => res.json({ uuid: crypto.randomUUID(), version }));
 
 app.get('/routes', (_req, res) => res.json({ routes: listRoutes(app) }));
+
+// Returns the list of customer orders as JSON. Delegates to the listOrders
+// usecase; any failure surfaces as a 500 rather than crashing the request.
+app.get('/api/orders', (_req, res) => {
+  try {
+    res.json({ orders: listOrders() });
+  } catch (err) {
+    res.status(500).json({ error: 'internal_error' });
+  }
+});
 
 app.get('/elfe', (_req, res) => res.status(200).json({ status: 'ok' }));
 
