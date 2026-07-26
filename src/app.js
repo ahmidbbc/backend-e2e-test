@@ -1,4 +1,5 @@
 const crypto = require('crypto');
+const path = require('path');
 const express = require('express');
 const cookieParser = require('cookie-parser');
 const authRouter = require('./routes/auth');
@@ -9,6 +10,15 @@ const { version } = require('../package.json');
 const app = express();
 app.use(express.json());
 app.use(cookieParser());
+
+const PUBLIC_DIR = path.join(__dirname, '..', 'public');
+
+// Serves the home page, which fetches the customer orders from /api/orders
+// client-side and renders them.
+app.get('/', (_req, res) => res.sendFile(path.join(PUBLIC_DIR, 'index.html')));
+
+// Serves static assets (CSS, client JS) from the public directory.
+app.use(express.static(PUBLIC_DIR));
 
 // Walks the Express router stack and collects the registered routes as
 // { method, path } entries. Handles both app-level routes and routes mounted
