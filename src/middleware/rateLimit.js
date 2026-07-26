@@ -55,7 +55,7 @@ function createRateLimiter(options = {}) {
     res.setHeader('X-RateLimit-Reset', String(resetSeconds));
 
     if (entry.count > limit) {
-      const retryAfter = Math.max(1, Math.ceil((entry.resetAt - current) / 1000));
+      const retryAfter = Math.max(1, Math.ceil(windowMs / 1000));
       res.setHeader('Retry-After', String(retryAfter));
       return res.status(429).json({ error: 'too_many_requests', retryAfter });
     }

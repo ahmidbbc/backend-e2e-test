@@ -71,11 +71,14 @@ app.get('/uuid', (_req, res) => res.json({ uuid: crypto.randomUUID(), version })
 
 app.get('/routes', (_req, res) => res.json({ routes: listRoutes(app) }));
 
-// Returns the list of customer orders as JSON. Delegates to the listOrders
-// usecase; any failure surfaces as a 500 rather than crashing the request.
-app.get('/api/orders', (_req, res) => {
+// Returns the list of customer orders as JSON. Supports filtering via the
+// `status`, `customer` and `date` (YYYY-MM-DD) query params and pagination via
+// `page` and `size`. Delegates to the listOrders usecase; any failure surfaces
+// as a 500 rather than crashing the request.
+app.get('/api/orders', (req, res) => {
   try {
-    res.json({ orders: listOrders() });
+    const { status, customer, date, page, size } = req.query;
+    res.json(listOrders({ status, customer, date, page, size }));
   } catch (err) {
     res.status(500).json({ error: 'internal_error' });
   }
