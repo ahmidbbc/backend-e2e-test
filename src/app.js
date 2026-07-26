@@ -1,13 +1,24 @@
 const crypto = require('crypto');
+const path = require('path');
 const express = require('express');
 const cookieParser = require('cookie-parser');
 const authRouter = require('./routes/auth');
+const { listOrders } = require('./usecases/listOrders');
 const { checkDatabaseConnection } = require('./services/dbHealth');
 const { version } = require('../package.json');
 
 const app = express();
 app.use(express.json());
 app.use(cookieParser());
+
+const PUBLIC_DIR = path.join(__dirname, '..', 'public');
+
+// Serves the home page, which fetches the customer orders from /api/orders
+// client-side and renders them.
+app.get('/', (_req, res) => res.sendFile(path.join(PUBLIC_DIR, 'index.html')));
+
+// Serves static assets (CSS, client JS) from the public directory.
+app.use(express.static(PUBLIC_DIR));
 
 // Walks the Express router stack and collects the registered routes as
 // { method, path } entries. Handles both app-level routes and routes mounted
@@ -59,6 +70,16 @@ app.get('/time', (_req, res) => res.json({ time: new Date().toISOString() }));
 app.get('/uuid', (_req, res) => res.json({ uuid: crypto.randomUUID(), version }));
 
 app.get('/routes', (_req, res) => res.json({ routes: listRoutes(app) }));
+
+// Returns the list of customer orders as JSON. Delegates to the listOrders
+// usecase; any failure surfaces as a 500 rather than crashing the request.
+app.get('/api/orders', (_req, res) => {
+  try {
+    res.json({ orders: listOrders() });
+  } catch (err) {
+    res.status(500).json({ error: 'internal_error' });
+  }
+});
 
 app.get('/elfe', (_req, res) => res.status(200).json({ status: 'ok' }));
 

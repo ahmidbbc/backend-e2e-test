@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Gestion des commandes</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header>
+      <h1>Gestion des commandes</h1>
+    </header>
+
+    <main>
+      <section id="orders">
+        <h2>Commandes clients</h2>
+        <p id="orders-status">Chargement des commandes…</p>
+        <ul id="orders-list"></ul>
+      </section>
+    </main>
+
+    <footer>
+      <p>&copy; Gestion des commandes</p>
+    </footer>
+
+    <script>
+      async function loadOrders() {
+        const status = document.getElementById('orders-status');
+        const list = document.getElementById('orders-list');
+        try {
+          const res = await fetch('/api/orders');
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const { orders } = await res.json();
+          list.replaceChildren();
+          if (!orders || orders.length === 0) {
+            status.textContent = 'Aucune commande.';
+            return;
+          }
+          status.hidden = true;
+          for (const order of orders) {
+            const item = document.createElement('li');
+            item.className = 'order-card';
+
+            const customer = document.createElement('span');
+            customer.className = 'order-customer';
+            customer.textContent = order.customer;
+
+            const total = document.createElement('span');
+            total.className = 'order-total';
+            total.textContent = `${Number(order.total).toFixed(2)} €`;
+
+            const badge = document.createElement('span');
+            badge.className = `order-status status-${order.status}`;
+            badge.textContent = order.status;
+
+            item.append(customer, total, badge);
+            list.append(item);
+          }
+        } catch (err) {
+          status.textContent = 'Impossible de charger les commandes.';
+        }
+      }
+
+      loadOrders();
+    </script>
+  </body>
+</html>
