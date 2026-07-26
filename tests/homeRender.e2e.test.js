@@ -38,7 +38,15 @@ function makeElement() {
   };
 }
 
+const STATUS_LABELS = {
+  pending: 'En attente',
+  shipped: 'Expédiée',
+  delivered: 'Livrée',
+};
+
 // Runs the same render logic as public/index.html against fetched orders.
+// Each card is a header row (customer + status badge) over a meta row
+// (order ref, date, total).
 function renderOrders(orders, statusEl, listEl, createElement) {
   listEl.replaceChildren();
   if (!orders || orders.length === 0) {
@@ -50,19 +58,36 @@ function renderOrders(orders, statusEl, listEl, createElement) {
     const item = createElement();
     item.className = 'order-card';
 
+    const head = createElement();
+    head.className = 'order-head';
+
     const customer = createElement();
     customer.className = 'order-customer';
     customer.textContent = order.customer;
+
+    const badge = createElement();
+    badge.className = `order-status status-${order.status}`;
+    badge.textContent = STATUS_LABELS[order.status] || order.status;
+
+    head.append(customer, badge);
+
+    const meta = createElement();
+    meta.className = 'order-meta';
+
+    const ref = createElement();
+    ref.className = 'order-ref';
+    ref.textContent = `Commande #${order.id}`;
+
+    const date = createElement();
+    date.className = 'order-date';
+    date.textContent = order.date == null ? '' : String(order.date);
 
     const total = createElement();
     total.className = 'order-total';
     total.textContent = `${Number(order.total).toFixed(2)} €`;
 
-    const badge = createElement();
-    badge.className = `order-status status-${order.status}`;
-    badge.textContent = order.status;
-
-    item.append(customer, total, badge);
+    meta.append(ref, date, total);
+    item.append(head, meta);
     listEl.append(item);
   }
 }
@@ -107,10 +132,16 @@ describe('home page render (e2e)', () => {
 
     const first = listEl.children[0];
     expect(first.className).toBe('order-card');
-    const [customer, total, badge] = first.children;
+    const [head, meta] = first.children;
+
+    const [customer, badge] = head.children;
     expect(customer.textContent).toBe(orders[0].customer);
-    expect(total.textContent).toBe(`${orders[0].total.toFixed(2)} €`);
     expect(badge.className).toBe(`order-status status-${orders[0].status}`);
+
+    const [ref, date, total] = meta.children;
+    expect(ref.textContent).toBe(`Commande #${orders[0].id}`);
+    expect(date.textContent).toBe(String(orders[0].date));
+    expect(total.textContent).toBe(`${orders[0].total.toFixed(2)} €`);
   });
 
   it('shows the empty-state message when there are no orders', () => {
