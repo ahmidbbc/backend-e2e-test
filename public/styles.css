@@ -7,6 +7,42 @@
   --border: #e4e7eb;
 }
 
+.counter-card {
+  padding: 2rem;
+  text-align: center;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+#counter-value {
+  display: block;
+  margin: 1rem 0;
+  font-size: 4rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+#counter-add {
+  padding: 0.75rem 2rem;
+  border: 0;
+  border-radius: 8px;
+  color: white;
+  background: var(--accent);
+  font: inherit;
+  cursor: pointer;
+}
+
+#counter-add:focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: 4px;
+}
+
+#counter-goal {
+  color: #065f46;
+  font-weight: 600;
+}
+
 * {
   box-sizing: border-box;
 }

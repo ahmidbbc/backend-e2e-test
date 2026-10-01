@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Compteur</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header><h1>Compteur</h1></header>
+    <main>
+      <p><a href="/">Retour à l’accueil</a></p>
+      <section class="counter-card" aria-label="Compteur de clics">
+        <p>Cliquez trois fois pour atteindre l’objectif.</p>
+        <output id="counter-value" aria-label="Nombre de clics" aria-live="polite">0</output>
+        <button id="counter-add" type="button">ajouter</button>
+        <p id="counter-goal" role="status" hidden>objectif atteint</p>
+      </section>
+    </main>
+    <script>
+      let count = 0;
+      const value = document.getElementById('counter-value');
+      const goal = document.getElementById('counter-goal');
+      document.getElementById('counter-add').addEventListener('click', () => {
+        count += 1;
+        value.textContent = String(count);
+        goal.hidden = count < 3;
+      });
+    </script>
+  </body>
+</html>
