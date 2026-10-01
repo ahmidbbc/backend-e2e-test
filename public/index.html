@@ -12,6 +12,12 @@
     </header>
 
     <main>
+      <section aria-labelledby="counter-title">
+        <h2 id="counter-title">Compteur</h2>
+        <p id="counter-value" role="status" aria-live="polite">0</p>
+        <button id="counter-add" type="button">Ajouter</button>
+      </section>
+
       <section id="orders">
         <div class="orders-head">
           <h2>Commandes clients</h2>
@@ -27,6 +33,13 @@
     </footer>
 
     <script>
+      let counter = 0;
+      const counterValue = document.getElementById('counter-value');
+      document.getElementById('counter-add').addEventListener('click', () => {
+        counter += 1;
+        counterValue.textContent = counter >= 3 ? 'objectif atteint' : String(counter);
+      });
+
       const STATUS_LABELS = {
         pending: 'En attente',
         shipped: 'Expédiée',
