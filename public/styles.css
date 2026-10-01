@@ -148,3 +148,37 @@ footer {
   padding: 2rem 1rem;
   font-size: 0.85rem;
 }
+
+.counter-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.5rem;
+  text-align: center;
+}
+
+#counter-value {
+  font-size: 2rem;
+  font-variant-numeric: tabular-nums;
+}
+
+#counter-add {
+  background: var(--accent);
+  color: white;
+  border: 0;
+  border-radius: 8px;
+  padding: 0.75rem 1.5rem;
+  font: inherit;
+  cursor: pointer;
+}
+
+#counter-add:focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: 3px;
+}
+
+#counter-goal {
+  min-height: 1.5em;
+  color: #065f46;
+  font-weight: 600;
+}

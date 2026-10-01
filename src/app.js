@@ -16,6 +16,7 @@ const PUBLIC_DIR = path.join(__dirname, '..', 'public');
 // Serves the home page, which fetches the customer orders from /api/orders
 // client-side and renders them.
 app.get('/', (_req, res) => res.sendFile(path.join(PUBLIC_DIR, 'index.html')));
+app.get('/compteur', (_req, res) => res.sendFile(path.join(PUBLIC_DIR, 'compteur.html')));
 
 // Serves static assets (CSS, client JS) from the public directory.
 app.use(express.static(PUBLIC_DIR));
