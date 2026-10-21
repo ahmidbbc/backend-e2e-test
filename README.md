@@ -87,3 +87,27 @@ git checkout main
 git reset --hard origin/main
 git push --force
 ```
+
+## Delivery tracking
+
+Deliveries are linked to existing order IDs (see `GET /api/orders`).
+This demo stores deliveries and their history **in memory**: data is lost on
+restart and is not shared between server instances. Like the orders API, these
+endpoints are public. Delivery status is tracked separately from order status.
+
+| Method | Path | Behavior |
+| --- | --- | --- |
+| POST | `/api/deliveries` | Create with JSON `{"orderId":2}`; returns `201` and a `Location` header. |
+| GET | `/api/deliveries` | List as `{"deliveries":[...]}`. |
+| GET | `/api/deliveries/:id` | Read the delivery, including its current status and history. |
+| PATCH | `/api/deliveries/:id/status` | Set status with JSON `{"status":"shipped"}`. |
+| GET | `/api/deliveries/:id/history` | Read `{"history":[...]}` in chronological insertion order. |
+
+A delivery has `id`, `orderId`, `status`, and `history`. Creation records the
+initial `pending` status. Allowed statuses are `pending`, `shipped`, `in_transit`,
+and `delivered`. Any change between these statuses is allowed, including a
+correction to an earlier status. Each change appends `{status, timestamp}` with a
+server-generated UTC ISO timestamp; repeating the current status is a no-op.
+Clients cannot supply or overwrite history. There is at most one delivery per
+order (`409` for duplicates). Invalid input returns `400`; unknown orders or
+deliveries return `404`.

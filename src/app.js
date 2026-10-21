@@ -3,6 +3,7 @@ const path = require('path');
 const express = require('express');
 const cookieParser = require('cookie-parser');
 const authRouter = require('./routes/auth');
+const { createDeliveryRouter } = require('./routes/deliveries');
 const { listOrders } = require('./usecases/listOrders');
 const { checkDatabaseConnection } = require('./services/dbHealth');
 const { version } = require('../package.json');
@@ -10,6 +11,7 @@ const { version } = require('../package.json');
 const app = express();
 app.use(express.json());
 app.use(cookieParser());
+app.use(createDeliveryRouter());
 
 const PUBLIC_DIR = path.join(__dirname, '..', 'public');
 
